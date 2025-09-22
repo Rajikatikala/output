@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>రుచికరమైన రెస్టారెంట్ మెనూ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+        .menu-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .menu-card:hover {
+            transform: translateY(-5px);
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header Section -->
+        <header class="bg-white shadow-md rounded-lg p-6 mb-8 flex flex-col sm:flex-row justify-between items-center">
+            <h1 class="text-4xl font-extrabold text-indigo-700 mb-4 sm:mb-0">రుచికరమైన వంటకాలు</h1>
+            <div class="relative">
+                <button id="cartButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    కార్ట్ (<span id="cartItemCount">0</span>)
+                </button>
+                <!-- Cart Modal -->
+                <div id="cartModal" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-10 p-4 border border-gray-200">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-700">మీ కార్ట్</h3>
+                    <div id="cartItems" class="max-h-60 overflow-y-auto mb-4">
+                        <!-- Cart items will be dynamically added here -->
+                        <p id="emptyCartMessage" class="text-gray-500 text-center">మీ కార్ట్ ఖాళీగా ఉంది.</p>
+                    </div>
+                    <div class="flex justify-between items-center border-t pt-4">
+                        <span class="text-lg font-bold">మొత్తం: <span id="cartTotal">₹0.00</span></span>
+                        <button id="checkoutButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out">
+                            చెల్లించండి
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Menu Categories/Filters (Optional, can be expanded) -->
+        <nav class="mb-8">
+            <ul class="flex flex-wrap justify-center gap-4">
+                <li><button class="category-btn bg-indigo-500 text-white px-5 py-2 rounded-full hover:bg-indigo-600 transition-colors duration-200 shadow-md" data-category="all">అన్నీ</button></li>
+                <li><button class="category-btn bg-gray-200 text-gray-700 px-5 py-2 rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="starters">స్టార్టర్స్</button></li>
+                <li><button class="category-btn bg-gray-200 text-gray-700 px-5 py-2 rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="main-course">మెయిన్ కోర్స్</button></li>
+                <li><button class="category-btn bg-gray-200 text-gray-700 px-5 py-2 rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="desserts">డెజర్ట్స్</button></li>
+                <li><button class="category-btn bg-gray-200 text-gray-700 px-5 py-2 rounded-full hover:bg-gray-300 transition-colors duration-200" data-category="beverages">పానీయాలు</button></li>
+            </ul>
+        </nav>
+
+        <!-- Menu Items Grid -->
+        <section id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Menu items will be dynamically loaded here -->
+        </section>
+
+        <!-- Message Box for alerts -->
+        <div id="messageBox" class="fixed bottom-8 right-8 bg-blue-600 text-white p-4 rounded-lg shadow-lg hidden z-50">
+            <p id="messageText"></p>
+        </div>
+    </div>
+
+    <script>
+        // Sample menu data
+        const menuItems = [
+            {
+                id: 1,
+                name: 'చికెన్ బిర్యానీ',
+                description: 'సుగంధ ద్రవ్యాలతో కూడిన బాస్మతి బియ్యంతో తయారుచేసిన రుచికరమైన చికెన్ బిర్యానీ.',
+                price: 250.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=చికెన్+బిర్యానీ',
+                category: 'main-course'
+            },
+            {
+                id: 2,
+                name: 'పనీర్ టిక్కా',
+                description: 'గ్రిల్ చేసిన పనీర్ ముక్కలు, మసాలా దినుసులతో మారినేట్ చేయబడినవి.',
+                price: 180.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=పనీర్+టిక్కా',
+                category: 'starters'
+            },
+            {
+                id: 3,
+                name: 'వెజ్ నూడుల్స్',
+                description: 'తాజా కూరగాయలతో మరియు సాస్‌లతో వేయించిన నూడుల్స్.',
+                price: 150.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=వెజ్+నూడుల్స్',
+                category: 'main-course'
+            },
+            {
+                id: 4,
+                name: 'గులాబ్ జామున్',
+                description: 'తీపి సిరప్‌లో నానబెట్టిన మృదువైన పాల బాల్స్.',
+                price: 80.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=గులాబ్+జామున్',
+                category: 'desserts'
+            },
+            {
+                id: 5,
+                name: 'మామిడి లస్సీ',
+                description: 'తాజా మామిడిపండుతో తయారుచేసిన చల్లని పెరుగు పానీయం.',
+                price: 100.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=మామిడి+లస్సీ',
+                category: 'beverages'
+            },
+            {
+                id: 6,
+                name: 'మష్రూమ్ టిక్కా',
+                description: 'మసాలా దినుసులతో మారినేట్ చేయబడిన గ్రిల్ చేసిన మష్రూమ్‌లు.',
+                price: 170.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=మష్రూమ్+టిక్కా',
+                category: 'starters'
+            },
+            {
+                id: 7,
+                name: 'ఫిష్ కర్రీ',
+                description: 'మసాలా దినుసులతో కూడిన చిక్కటి గ్రేవీలో ఫిష్ కర్రీ.',
+                price: 280.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=ఫిష్+కర్రీ',
+                category: 'main-course'
+            },
+            {
+                id: 8,
+                name: 'కాఫీ',
+                description: 'తాజాగా కాచిన కాఫీ.',
+                price: 60.00,
+                image: 'https://placehold.co/400x300/e0e0e0/333333?text=కాఫీ',
+                category: 'beverages'
+            }
+        ];
+
+        let cart = []; // Initialize an empty cart array
+
+        const menuContainer = document.getElementById('menuContainer');
+        const cartButton = document.getElementById('cartButton');
+        const cartModal = document.getElementById('cartModal');
+        const cartItemsContainer = document.getElementById('cartItems');
+        const cartItemCount = document.getElementById('cartItemCount');
+        const cartTotal = document.getElementById('cartTotal');
+        const emptyCartMessage = document.getElementById('emptyCartMessage');
+        const checkoutButton = document.getElementById('checkoutButton');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const categoryButtons = document.querySelectorAll('.category-btn');
+
+        // Function to display messages
+        function showMessage(message, type = 'info') {
+            messageText.textContent = message;
+            messageBox.className = `fixed bottom-8 right-8 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 ease-in-out transform translate-y-0 opacity-100`;
+
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-600', 'text-white');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-600', 'text-white');
+            } else {
+                messageBox.classList.add('bg-blue-600', 'text-white');
+            }
+
+            messageBox.classList.remove('hidden');
+
+            setTimeout(() => {
+                messageBox.classList.add('translate-y-full', 'opacity-0');
+                messageBox.addEventListener('transitionend', () => {
+                    messageBox.classList.add('hidden');
+                    messageBox.classList.remove('translate-y-full', 'opacity-0');
+                }, { once: true });
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+        // Function to render menu items
+        function renderMenuItems(filterCategory = 'all') {
+            menuContainer.innerHTML = ''; // Clear existing items
+            const filteredItems = filterCategory === 'all'
+                ? menuItems
+                : menuItems.filter(item => item.category === filterCategory);
+
+            if (filteredItems.length === 0) {
+                menuContainer.innerHTML = `<p class="col-span-full text-center text-gray-500 text-xl py-10">ఈ కేటగిరీలో వస్తువులు అందుబాటులో లేవు.</p>`;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const menuItemDiv = document.createElement('div');
+                menuItemDiv.className = 'menu-card bg-white rounded-xl shadow-lg overflow-hidden flex flex-col justify-between';
+                menuItemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="w-full h-48 object-cover">
+                    <div class="p-5 flex flex-col flex-grow">
+                        <h3 class="text-2xl font-semibold text-gray-900 mb-2">${item.name}</h3>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">${item.description}</p>
+                        <div class="flex justify-between items-center mt-auto">
+                            <span class="text-xl font-bold text-indigo-600">₹${item.price.toFixed(2)}</span>
+                            <button data-id="${item.id}" class="add-to-cart-btn bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 ease-in-out">
+                                కార్ట్‌కు జోడించు
+                            </button>
+                        </div>
+                    </div>
+                `;
+                menuContainer.appendChild(menuItemDiv);
+            });
+
+            // Add event listeners to "Add to Cart" buttons
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const itemId = parseInt(event.target.dataset.id);
+                    addToCart(itemId);
+                });
+            });
+        }
+
+        // Function to add item to cart
+        function addToCart(itemId) {
+            const itemToAdd = menuItems.find(item => item.id === itemId);
+            if (itemToAdd) {
+                const existingCartItem = cart.find(cartItem => cartItem.id === itemId);
+                if (existingCartItem) {
+                    existingCartItem.quantity++;
+                } else {
+                    cart.push({ ...itemToAdd, quantity: 1 });
+                }
+                updateCartDisplay();
+                showMessage(`${itemToAdd.name} కార్ట్‌కు జోడించబడింది!`, 'success');
+            }
+        }
+
+        // Function to remove item from cart
+        function removeFromCart(itemId) {
+            cart = cart.filter(item => item.id !== itemId);
+            updateCartDisplay();
+            showMessage('వస్తువు కార్ట్ నుండి తీసివేయబడింది.', 'info');
+        }
+
+        // Function to update item quantity in cart
+        function updateCartQuantity(itemId, change) {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
+            if (itemIndex > -1) {
+                cart[itemIndex].quantity += change;
+                if (cart[itemIndex].quantity <= 0) {
+                    removeFromCart(itemId);
+                } else {
+                    updateCartDisplay();
+                }
+            }
+        }
+
+        // Function to update cart display
+        function updateCartDisplay() {
+            cartItemsContainer.innerHTML = ''; // Clear current cart items
+            let totalItems = 0;
+            let totalPrice = 0;
+
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+            } else {
+                emptyCartMessage.classList.add('hidden');
+                cart.forEach(item => {
+                    const cartItemDiv = document.createElement('div');
+                    cartItemDiv.className = 'flex justify-between items-center py-2 border-b last:border-b-0';
+                    cartItemDiv.innerHTML = `
+                        <div class="flex-grow">
+                            <span class="font-medium">${item.name}</span>
+                            <span class="text-sm text-gray-500"> (₹${item.price.toFixed(2)})</span>
+                        </div>
+                        <div class="flex items-center">
+                            <button data-id="${item.id}" data-action="decrease" class="quantity-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">-</button>
+                            <span class="mx-2">${item.quantity}</span>
+                            <button data-id="${item.id}" data-action="increase" class="quantity-btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">+</button>
+                            <button data-id="${item.id}" class="remove-from-cart-btn text-red-500 hover:text-red-700 ml-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    cartItemsContainer.appendChild(cartItemDiv);
+
+                    totalItems += item.quantity;
+                    totalPrice += item.price * item.quantity;
+                });
+
+                // Add event listeners for quantity buttons and remove buttons
+                document.querySelectorAll('.quantity-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const itemId = parseInt(event.target.dataset.id);
+                        const action = event.target.dataset.action;
+                        updateCartQuantity(itemId, action === 'increase' ? 1 : -1);
+                    });
+                });
+
+                document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                    button.addEventListener('click', (event) => {
+                        const itemId = parseInt(event.target.dataset.id);
+                        removeFromCart(itemId);
+                    });
+                });
+            }
+
+            cartItemCount.textContent = totalItems;
+            cartTotal.textContent = `₹${totalPrice.toFixed(2)}`;
+        }
+
+        // Event listener for cart button to toggle modal
+        cartButton.addEventListener('click', () => {
+            cartModal.classList.toggle('hidden');
+        });
+
+        // Close cart modal when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!cartModal.contains(event.target) && !cartButton.contains(event.target)) {
+                cartModal.classList.add('hidden');
+            }
+        });
+
+        // Event listener for category buttons
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const category = event.target.dataset.category;
+                categoryButtons.forEach(btn => {
+                    btn.classList.remove('bg-indigo-500', 'text-white', 'hover:bg-indigo-600');
+                    btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                });
+                event.target.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                event.target.classList.add('bg-indigo-500', 'text-white', 'hover:bg-indigo-600');
+                renderMenuItems(category);
+            });
+        });
+
+        // Checkout button functionality
+        checkoutButton.addEventListener('click', () => {
+            if (cart.length > 0) {
+                showMessage('మీ ఆర్డర్ విజయవంతంగా ఉంచబడింది! ధన్యవాదాలు!', 'success');
+                cart = []; // Clear the cart after checkout
+                updateCartDisplay();
+                cartModal.classList.add('hidden'); // Hide the cart modal
+            } else {
+                showMessage('మీ కార్ట్ ఖాళీగా ఉంది. దయచేసి ఆర్డర్ చేయడానికి వస్తువులను జోడించండి.', 'error');
+            }
+        });
+
+        // Initial render of menu items and cart display
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMenuItems();
+            updateCartDisplay();
+        });
+    </script>
+</body>
+</html>
